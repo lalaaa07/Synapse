@@ -1,83 +1,82 @@
-import { useState } from "react";
-import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useSensor } from "../Context/SensorContext";
 
 export default function Index() {
-  const [scanning, setScanning] = useState(false);
-  const [connected, setConnected] = useState(false);
-  const [devices, setDevices] = useState([
-    { id: "1", name: "MyWearable" },
-  ]);
-
-  function startScan() {
-    setScanning(true);
-    setTimeout(() => setScanning(false), 3000);
-  }
-
-  function connectToDevice(name: string) {
-    setConnected(true);
-  }
+  const { connected, setConnected } = useSensor();
 
   return (
-    <View style={styles.container}>
+    <LinearGradient colors={["#0a0015", "#0d0628", "#0a1628"]} style={styles.bg}>
+      <View style={styles.container}>
 
-      {/* Header */}
-      <Text style={styles.title}>Wearable App</Text>
-      <Text style={styles.subtitle}>
-        {connected ? "Connected to MyWearable" : "No device connected"}
-      </Text>
+        {/* Logo / title */}
+        <LinearGradient colors={["#4f46e5", "#7c3aed"]} style={styles.logoCircle}>
+          <Text style={styles.logoText}>S</Text>
+        </LinearGradient>
+        <Text style={styles.title}>Synapse</Text>
+        <Text style={styles.subtitle}>Wearable awareness device</Text>
 
-      {/* Status dot */}
-      <View style={[styles.dot, connected ? styles.dotGreen : styles.dotGray]} />
-
-      {/* Scan button */}
-      <TouchableOpacity
-        style={[styles.button, scanning && styles.buttonDisabled]}
-        onPress={startScan}
-        disabled={scanning}
-      >
-        {scanning
-          ? <ActivityIndicator color="#fff" />
-          : <Text style={styles.buttonText}>Scan for Device</Text>
-        }
-      </TouchableOpacity>
-
-      {/* Device list */}
-      {devices.length > 0 && (
-        <View style={styles.list}>
-          <Text style={styles.listTitle}>Nearby Devices</Text>
-          <FlatList
-            data={devices}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={styles.deviceRow}
-                onPress={() => connectToDevice(item.name)}
-              >
-                <Text style={styles.deviceName}>{item.name}</Text>
-                <Text style={styles.deviceConnect}>Connect</Text>
-              </TouchableOpacity>
-            )}
-          />
+        {/* Status dot */}
+        <View style={styles.statusRow}>
+          <View style={[styles.dot, { backgroundColor: connected ? "#22c55e" : "#4f46e5" }]} />
+          <Text style={styles.statusText}>
+            {connected ? "Connected to Synapse" : "No device connected"}
+          </Text>
         </View>
-      )}
 
-    </View>
+        {/* Connect button */}
+        <TouchableOpacity onPress={() => setConnected(!connected)} style={styles.btnWrap}>
+          <LinearGradient
+            colors={connected ? ["#7f1d1d","#dc2626"] : ["#1e1b4b","#4f46e5"]}
+            start={{x:0,y:0}} end={{x:1,y:0}}
+            style={styles.button}
+          >
+            <Text style={styles.buttonText}>
+              {connected ? "Disconnect" : "Scan for Device"}
+            </Text>
+          </LinearGradient>
+        </TouchableOpacity>
+
+        {/* Status card */}
+        <LinearGradient colors={["#12002a", "#0d1b3e"]} style={styles.card}>
+          <Text style={styles.cardTitle}>Device Status</Text>
+          {[
+            { label: "Bluetooth",  value: connected ? "Connected"    : "Disconnected" },
+            { label: "Ultrasonic", value: connected ? "Active"       : "Waiting" },
+            { label: "IR Sensor",  value: connected ? "Active"       : "Waiting" },
+            { label: "MPU6050",    value: connected ? "Active"       : "Waiting" },
+            { label: "Motor",      value: connected ? "Ready"        : "Waiting" },
+          ].map(({ label, value }) => (
+            <View key={label} style={styles.statusItem}>
+              <Text style={styles.statusLabel}>{label}</Text>
+              <Text style={[styles.statusValue, { color: connected ? "#22c55e" : "#4f46e5" }]}>
+                {value}
+              </Text>
+            </View>
+          ))}
+        </LinearGradient>
+
+      </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  container:     { flex: 1, backgroundColor: "#0f0f0f", alignItems: "center", justifyContent: "center", padding: 24 },
-  title:         { fontSize: 28, fontWeight: "bold", color: "#ffffff", marginBottom: 8 },
-  subtitle:      { fontSize: 14, color: "#888", marginBottom: 24 },
-  dot:           { width: 16, height: 16, borderRadius: 8, marginBottom: 32 },
-  dotGreen:      { backgroundColor: "#22c55e" },
-  dotGray:       { backgroundColor: "#444" },
-  button:        { backgroundColor: "#2563eb", paddingVertical: 14, paddingHorizontal: 40, borderRadius: 12, marginBottom: 32 },
-  buttonDisabled:{ backgroundColor: "#1e3a6e" },
-  buttonText:    { color: "#fff", fontSize: 16, fontWeight: "600" },
-  list:          { width: "100%", backgroundColor: "#1a1a1a", borderRadius: 12, padding: 16 },
-  listTitle:     { color: "#888", fontSize: 12, marginBottom: 12, textTransform: "uppercase", letterSpacing: 1 },
-  deviceRow:     { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: "#2a2a2a" },
-  deviceName:    { color: "#fff", fontSize: 16 },
-  deviceConnect: { color: "#2563eb", fontSize: 14, fontWeight: "600" },
+  bg:           { flex: 1 },
+  container:    { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
+  logoCircle:   { width: 80, height: 80, borderRadius: 40, alignItems: "center", justifyContent: "center", marginBottom: 16 },
+  logoText:     { fontSize: 40, fontWeight: "bold", color: "#fff" },
+  title:        { fontSize: 32, fontWeight: "bold", color: "#fff", marginBottom: 4 },
+  subtitle:     { fontSize: 13, color: "#6366f1", marginBottom: 32, letterSpacing: 1 },
+  statusRow:    { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 24 },
+  dot:          { width: 10, height: 10, borderRadius: 5 },
+  statusText:   { color: "#818cf8", fontSize: 14 },
+  btnWrap:      { width: "100%", marginBottom: 32 },
+  button:       { paddingVertical: 16, borderRadius: 14, alignItems: "center" },
+  buttonText:   { color: "#fff", fontSize: 16, fontWeight: "700", letterSpacing: 0.5 },
+  card:         { width: "100%", borderRadius: 16, padding: 20 },
+  cardTitle:    { fontSize: 12, color: "#6366f1", textTransform: "uppercase", letterSpacing: 1, marginBottom: 16 },
+  statusItem:   { flexDirection: "row", justifyContent: "space-between", paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: "#1e1b4b" },
+  statusLabel:  { color: "#818cf8", fontSize: 14 },
+  statusValue:  { fontSize: 14, fontWeight: "600" },
 });
