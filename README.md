@@ -21,7 +21,7 @@ Individuals with schizophrenia or PTSD may experience sensory overload, anxiety,
 
 - 🔍 Obstacle detection using IR / Ultrasonic sensors  
 - 🧭 Motion tracking with IMU  
-- ❤️ Heart rate monitoring (PPG sensor)  
+- ❤️ Heart rate monitoring (Pulse sensor)  
 - 📳 Haptic feedback via vibration motor  
 - 🎧 **Bluetooth audio support for calming music / guided sounds**  
 - 📱 **Mobile app integration for control and customization**  
