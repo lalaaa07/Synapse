@@ -18,9 +18,7 @@ export default function Alerts() {
     setAlertSettings({ ...alertSettings, [key]: value });
   }
 
-  function sendMotorCommand(cmd: string) {
-    console.log("Motor command:", cmd);
-  }
+  const { sendMotorCommand } = useSensor();
 
   return (
     <LinearGradient colors={["#0a0015", "#0d0628", "#0a1628"]} style={styles.bg}>
