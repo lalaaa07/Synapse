@@ -2,18 +2,27 @@ package com.example.synapse.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val CreamBackground = Color(0xFF2B193D) // Midnight Violet
-val TanSurface = Color(0xFF2C365E)      // Twilight Indigo
-val TanSurfaceElevated = Color(0xFF484D6D) // Dusty Grape
-val BorderWarm = Color(0xFF54577A)      // muted slate-violet border
+// ── White / Warm-Cream Surfaces ──────────────────────────────────────────────
+val WarmWhite        = Color(0xFFF9F8F6)   // page background — off-white, never cold
+val SurfaceWhite     = Color(0xFFFFFFFF)   // card surface
+val SurfaceElevated  = Color(0xFFF2F0ED)   // slightly deeper for nested sections
+val BorderSilver     = Color(0xFFE2DDD8)   // hairline borders — warm silver
+val DividerTint      = Color(0xFFECE8E3)   // section dividers
 
-val RedAccent = Color(0xFF4B8F8C)   // Dark Cyan — primary accent
-val MaroonDark = Color(0xFFC5979D)  // Rosy Taupe — secondary accent
+// ── Gem Accent Palette ────────────────────────────────────────────────────────
+val GemSapphire      = Color(0xFF2A6496)   // primary — deep sapphire blue (gem)
+val GemSapphireLight = Color(0xFF3A80BB)   // lighter sapphire for hover/tints
+val RoseQuartz       = Color(0xFFC0728E)   // secondary — rose quartz
+val AmberGem         = Color(0xFFB8860B)   // warm amber for moderate alerts
+val EmeraldGem       = Color(0xFF2E8B6A)   // calm / ok state — emerald
 
-val CalmRisk = Color(0xFF4B8F8C)     // Dark Cyan
-val ModerateRisk = Color(0xFFC5979D) // Rosy Taupe
-val HighRisk = Color(0xFFB05C5C)     // added: muted brick-red for genuine danger
-val CriticalRisk = Color(0xFF7A3B3B)
+// ── Risk Spectrum ─────────────────────────────────────────────────────────────
+val CalmRisk         = Color(0xFF2E8B6A)   // Emerald — all-clear
+val ModerateRisk     = Color(0xFFB8860B)   // Amber — watch
+val HighRisk         = Color(0xFFC0392B)   // Crimson — high alert
+val CriticalRisk     = Color(0xFF922B21)   // Deep Crimson — critical
 
-val TextPrimary = Color(0xFFEDE8F0)
-val TextSecondary = Color(0xFF9C93B0)
+// ── Text ──────────────────────────────────────────────────────────────────────
+val TextPrimary      = Color(0xFF1A1A2E)   // charcoal — strong contrast on white
+val TextSecondary    = Color(0xFF6B7C93)   // slate — calm secondary label
+val TextHint         = Color(0xFFADAFBD)   // placeholder / hint

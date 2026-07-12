@@ -1,5 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
-    <style name="Theme.Synapse" parent="android:Theme.Material.Light.NoActionBar" />
+    <!--
+      Light theme — the activity window chrome is white.
+      Compose handles all surface colors; this XML just ensures the
+      system bars and splash have a matching warm white background.
+    -->
+    <style name="Theme.Synapse" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/warm_white</item>
+        <item name="android:statusBarColor">@color/warm_white</item>
+        <item name="android:navigationBarColor">@color/warm_white</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
 </resources>

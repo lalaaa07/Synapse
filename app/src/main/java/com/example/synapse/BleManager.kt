@@ -199,7 +199,7 @@ class BleManager(private val context: Context) {
                     if (isIntentionalDisconnect) {
                         logAction("Disconnected")
                     } else {
-                        logAction("⚠️ Connection lost — attempting to reconnect...")
+                        logAction("[!] Connection lost — attempting to reconnect...")
                         scheduleReconnect()
                     }
                 }
@@ -317,10 +317,10 @@ class BleManager(private val context: Context) {
                 val message = getEmergencyContactMessage()
 
                 if (phone.isBlank()) {
-                    logAction("⚠️ High risk ($reason) but no emergency contact configured")
+                    logAction("[!] High risk ($reason) but no emergency contact configured")
                 } else {
                     smsLocationHelper.sendEmergencySms(phone, message, reason)
-                    logAction("🚨 Emergency SMS sent: $reason")
+                    logAction("[>>] Emergency SMS sent: $reason")
                 }
                 highRiskAlertSent = true
             }
