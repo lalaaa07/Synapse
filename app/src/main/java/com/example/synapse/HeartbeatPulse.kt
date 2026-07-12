@@ -8,7 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
-import com.example.synapse.ui.theme.CoralRisk
+import com.example.synapse.ui.theme.HighRisk
 
 @Composable
 fun HeartbeatPulse(bpm: Int) {

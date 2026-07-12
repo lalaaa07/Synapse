@@ -6,8 +6,8 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.synapse.ui.theme.BorderDark
-import com.example.synapse.ui.theme.SurfaceDark
+import com.example.synapse.ui.theme.BorderWarm
+import com.example.synapse.ui.theme.TanSurface
 
 @Composable
 fun SynapseCard(
@@ -16,8 +16,8 @@ fun SynapseCard(
 ) {
     Card(
         modifier = modifier,
-        colors = CardDefaults.cardColors(containerColor = SurfaceDark),
-        border = BorderStroke(1.dp, BorderDark),
+        colors = CardDefaults.cardColors(containerColor = TanSurface),
+        border = BorderStroke(1.dp, BorderWarm),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         content()

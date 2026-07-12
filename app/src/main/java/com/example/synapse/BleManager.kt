@@ -98,6 +98,9 @@ class BleManager(private val context: Context) {
     private var highRiskAlertSent = false
     private var pendingHighRiskSince: Long? = null
     private val SUSTAINED_THRESHOLD_MS = 3000L // signal must persist this long before we act (fall is exempt)
+    private var isIntentionalDisconnect = false
+    private var reconnectJob: Job? = null
+    private val RECONNECT_DELAY_MS = 4000L
 
     private fun logAction(message: String) {
         val entry = "${timeFormat.format(Date())} — $message"
@@ -117,6 +120,15 @@ class BleManager(private val context: Context) {
     fun getEmergencyContactName(): String = prefs.getString("contact_name", "") ?: ""
     fun getEmergencyContactPhone(): String = prefs.getString("contact_phone", "") ?: ""
     fun getEmergencyContactMessage(): String = prefs.getString("contact_message", "") ?: ""
+
+    private fun scheduleReconnect() {
+        reconnectJob?.cancel()
+        reconnectJob = managerScope.launch {
+            delay(RECONNECT_DELAY_MS)
+            Log.d(TAG, "Attempting auto-reconnect...")
+            startScan()
+        }
+    }
 
     // ---------------- Scanning / Connection ----------------
 
@@ -177,13 +189,19 @@ class BleManager(private val context: Context) {
                 BluetoothProfile.STATE_DISCONNECTED -> {
                     Log.d(TAG, "Disconnected from GATT server")
                     _connectionState.value = BleConnectionState.Disconnected
-                    logAction("Disconnected")
                     bluetoothGatt = null
                     vibrationCharacteristic = null
                     stopVibrationSequence()
                     isCurrentlyHighRisk = false
                     highRiskAlertSent = false
                     _deviceAddress.value = null
+
+                    if (isIntentionalDisconnect) {
+                        logAction("Disconnected")
+                    } else {
+                        logAction("⚠️ Connection lost — attempting to reconnect...")
+                        scheduleReconnect()
+                    }
                 }
             }
         }

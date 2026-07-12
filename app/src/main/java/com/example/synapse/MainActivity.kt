@@ -8,29 +8,28 @@ import androidx.activity.compose.setContent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.synapse.ui.theme.SynapseTheme
-import androidx.compose.material3.Slider
-import androidx.compose.foundation.border
-import androidx.compose.foundation.background
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.draw.clip
-import androidx.compose.foundation.layout.navigationBarsPadding
 
 class MainActivity : ComponentActivity() {
 
@@ -83,7 +82,7 @@ class MainActivity : ComponentActivity() {
                 val actionLog by bleManager.actionLog.collectAsState()
                 val shouldPlayCalmingMusic by bleManager.shouldPlayCalmingMusic.collectAsState()
 
-                var manualMusicEnabled by remember { mutableStateOf(true) } // user can disable auto-music entirely
+                var manualMusicEnabled by remember { mutableStateOf(true) }
                 var musicVolume by remember { mutableStateOf(1.0f) }
 
                 LaunchedEffect(shouldPlayCalmingMusic, manualMusicEnabled) {
@@ -100,28 +99,19 @@ class MainActivity : ComponentActivity() {
 
                 var selectedTab by remember { mutableStateOf(0) }
 
-                Scaffold(
-                    modifier = Modifier.fillMaxSize(),
-                    containerColor = com.example.synapse.ui.theme.BackgroundDark,
-                    bottomBar = {
-                        SynapseNavBar(
-                            selectedTab = selectedTab,
-                            onTabSelected = { selectedTab = it }
-                        )
-                    }
-                ) { innerPadding ->
+                Box(modifier = Modifier.fillMaxSize()) {
+                    Image(
+                        painter = painterResource(id = R.drawable.background),
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+
                     Box(
                         modifier = Modifier
-                            .padding(innerPadding)
-                            .background(
-                                brush = androidx.compose.ui.graphics.Brush.verticalGradient(
-                                    colors = listOf(
-                                        com.example.synapse.ui.theme.BackgroundDark,
-                                        com.example.synapse.ui.theme.SurfaceDark.copy(alpha = 0.4f)
-                                    )
-                                )
-                            )
                             .fillMaxSize()
+                            .statusBarsPadding()
+                            .padding(bottom = 90.dp)
                     ) {
                         when (selectedTab) {
                             0 -> DeviceStatusTab(
@@ -148,6 +138,13 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                     }
+
+                    Box(modifier = Modifier.align(Alignment.BottomCenter)) {
+                        SynapseNavBar(
+                            selectedTab = selectedTab,
+                            onTabSelected = { selectedTab = it }
+                        )
+                    }
                 }
             }
         }
@@ -163,6 +160,22 @@ class MainActivity : ComponentActivity() {
 data class NavTab(val label: String, val emoji: String)
 
 @Composable
+fun GlassHeader(text: String) {
+    GlassPanel(
+        modifier = Modifier.fillMaxWidth(),
+        tint = com.example.synapse.ui.theme.RedAccent
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold,
+            color = com.example.synapse.ui.theme.TextPrimary,
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)
+        )
+    }
+}
+
+@Composable
 fun SynapseNavBar(selectedTab: Int, onTabSelected: (Int) -> Unit) {
     val labels = listOf("Device", "Monitor", "Settings")
 
@@ -173,47 +186,44 @@ fun SynapseNavBar(selectedTab: Int, onTabSelected: (Int) -> Unit) {
             .padding(horizontal = 20.dp, vertical = 16.dp),
         contentAlignment = Alignment.Center
     ) {
-        Row(
-            modifier = Modifier
-                .clip(RoundedCornerShape(28.dp))
-                .background(com.example.synapse.ui.theme.SurfaceDark)
-                .border(
-                    width = 1.dp,
-                    color = com.example.synapse.ui.theme.BorderDark,
-                    shape = RoundedCornerShape(28.dp)
-                )
-                .padding(6.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        GlassPanel(
+            shape = RoundedCornerShape(28.dp),
+            tint = com.example.synapse.ui.theme.RedAccent
         ) {
-            labels.forEachIndexed { index, label ->
-                val selected = selectedTab == index
-                val accentColor = com.example.synapse.ui.theme.SageAccent
+            Row(
+                modifier = Modifier.padding(6.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                labels.forEachIndexed { index, label ->
+                    val selected = selectedTab == index
+                    val accentColor = com.example.synapse.ui.theme.RedAccent
 
-                Column(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(22.dp))
-                        .background(
-                            if (selected) accentColor.copy(alpha = 0.18f) else Color.Transparent
+                    Column(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(22.dp))
+                            .background(
+                                if (selected) accentColor.copy(alpha = 0.25f) else Color.Transparent
+                            )
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null
+                            ) { onTabSelected(index) }
+                            .padding(horizontal = 20.dp, vertical = 10.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        val iconColor = if (selected) accentColor else com.example.synapse.ui.theme.TextSecondary
+                        when (index) {
+                            0 -> SignalIcon(color = iconColor)
+                            1 -> PulseIcon(color = iconColor)
+                            2 -> SettingsIcon(color = iconColor)
+                        }
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            label,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = iconColor
                         )
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null
-                        ) { onTabSelected(index) }
-                        .padding(horizontal = 20.dp, vertical = 10.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    val iconColor = if (selected) accentColor else com.example.synapse.ui.theme.TextSecondary
-                    when (index) {
-                        0 -> SignalIcon(color = iconColor)
-                        1 -> PulseIcon(color = iconColor)
-                        2 -> SettingsIcon(color = iconColor)
                     }
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        label,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = iconColor
-                    )
                 }
             }
         }
@@ -231,10 +241,9 @@ fun DeviceStatusTab(state: BleConnectionState, telemetry: Telemetry?, deviceAddr
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Text("Device Status", style = MaterialTheme.typography.headlineMedium)
+        GlassHeader("Device Status")
 
-        // BLE Connection Card
-        Card(modifier = Modifier.fillMaxWidth()) {
+        SynapseCard(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text("BLE Connection", style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(8.dp))
@@ -248,7 +257,7 @@ fun DeviceStatusTab(state: BleConnectionState, telemetry: Telemetry?, deviceAddr
                     is BleConnectionState.Connected -> "Connected"
                     is BleConnectionState.Error -> "Error: ${state.message}"
                 }
-                val statusColor = if (state is BleConnectionState.Connected) Color(0xFF2E7D32) else MaterialTheme.colorScheme.onSurfaceVariant
+                val statusColor = if (state is BleConnectionState.Connected) com.example.synapse.ui.theme.CalmRisk else MaterialTheme.colorScheme.onSurfaceVariant
 
                 Text(text = statusText, color = statusColor, style = MaterialTheme.typography.bodyLarge)
                 Spacer(modifier = Modifier.height(4.dp))
@@ -259,8 +268,7 @@ fun DeviceStatusTab(state: BleConnectionState, telemetry: Telemetry?, deviceAddr
             }
         }
 
-        // IR Placement Indicator
-        Card(modifier = Modifier.fillMaxWidth()) {
+        SynapseCard(modifier = Modifier.fillMaxWidth()) {
             Row(
                 modifier = Modifier.padding(16.dp).fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -269,15 +277,14 @@ fun DeviceStatusTab(state: BleConnectionState, telemetry: Telemetry?, deviceAddr
                 Text("IR Placement", style = MaterialTheme.typography.titleMedium)
                 val irOk = telemetry?.ir == true
                 Badge(
-                    containerColor = if (irOk) Color(0xFF2E7D32) else Color(0xFFB71C1C)
+                    containerColor = if (irOk) com.example.synapse.ui.theme.CalmRisk else com.example.synapse.ui.theme.HighRisk
                 ) {
                     Text(if (irOk) "OK" else "Not Placed")
                 }
             }
         }
 
-        // Obstacle Radar
-        Card(modifier = Modifier.fillMaxWidth()) {
+        SynapseCard(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text("Obstacle Radar", style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(8.dp))
@@ -286,17 +293,16 @@ fun DeviceStatusTab(state: BleConnectionState, telemetry: Telemetry?, deviceAddr
                 Text(
                     text = "${dist} cm",
                     style = MaterialTheme.typography.headlineSmall,
-                    color = if (isClose) Color(0xFFB71C1C) else MaterialTheme.colorScheme.onSurface
+                    color = if (isClose) com.example.synapse.ui.theme.HighRisk else MaterialTheme.colorScheme.onSurface
                 )
                 if (isClose) {
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text("⚠️ Obstacle nearby", color = Color(0xFFB71C1C))
+                    Text("⚠️ Obstacle nearby", color = com.example.synapse.ui.theme.HighRisk)
                 }
             }
         }
 
-        // Self-Test Dashboard
-        Card(modifier = Modifier.fillMaxWidth()) {
+        SynapseCard(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text("Self-Test", style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(8.dp))
@@ -315,7 +321,10 @@ fun SelfTestRow(label: String, ok: Boolean) {
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(label)
-        Text(if (ok) "✅ OK" else "❌ No data", color = if (ok) Color(0xFF2E7D32) else Color(0xFFB71C1C))
+        Text(
+            if (ok) "✅ OK" else "❌ No data",
+            color = if (ok) com.example.synapse.ui.theme.CalmRisk else com.example.synapse.ui.theme.HighRisk
+        )
     }
 }
 
@@ -329,10 +338,8 @@ fun EpisodeMonitorTab(telemetry: Telemetry?, riskScore: Int, actionLog: List<Str
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Text("Episode Monitor", style = MaterialTheme.typography.headlineMedium)
+        GlassHeader("Episode Monitor")
 
-        // Risk Score Gauge
-        // Risk Score Gauge — signature element
         SynapseCard(modifier = Modifier.fillMaxWidth()) {
             Column(
                 modifier = Modifier.padding(24.dp).fillMaxWidth(),
@@ -344,7 +351,6 @@ fun EpisodeMonitorTab(telemetry: Telemetry?, riskScore: Int, actionLog: List<Str
             }
         }
 
-// BPM Card with animated heartbeat
         SynapseCard(modifier = Modifier.fillMaxWidth()) {
             Row(
                 modifier = Modifier.padding(16.dp).fillMaxWidth(),
@@ -360,16 +366,14 @@ fun EpisodeMonitorTab(telemetry: Telemetry?, riskScore: Int, actionLog: List<Str
             }
         }
 
-        // Motion Telemetry Cards
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
             MotionIndicator("Tremor", telemetry?.tremor == true, Modifier.weight(1f))
             MotionIndicator("Agitation", telemetry?.agit == true, Modifier.weight(1f))
             MotionIndicator("Fall", telemetry?.fall == true, Modifier.weight(1f))
         }
 
-        // Status Feed
         Text("Status Feed", style = MaterialTheme.typography.titleMedium)
-        Card(modifier = Modifier.fillMaxWidth().weight(1f)) {
+        SynapseCard(modifier = Modifier.fillMaxWidth().weight(1f)) {
             if (actionLog.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.Center) {
                     Text("No activity yet", style = MaterialTheme.typography.bodyMedium)
@@ -387,7 +391,7 @@ fun EpisodeMonitorTab(telemetry: Telemetry?, riskScore: Int, actionLog: List<Str
 
 @Composable
 fun MotionIndicator(label: String, active: Boolean, modifier: Modifier = Modifier) {
-    val glowColor = com.example.synapse.ui.theme.CoralRisk
+    val glowColor = com.example.synapse.ui.theme.HighRisk
     SynapseCard(
         modifier = modifier.then(
             if (active) Modifier.border(
@@ -439,10 +443,9 @@ fun SettingsTab(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Text("Calming Settings", style = MaterialTheme.typography.headlineMedium)
+        GlassHeader("Calming Settings")
 
-        // Manual Vibrator Test Dashboard
-        Card(modifier = Modifier.fillMaxWidth()) {
+        SynapseCard(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text("Manual Vibrator Test", style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(12.dp))
@@ -459,8 +462,7 @@ fun SettingsTab(
             }
         }
 
-        // Emergency Contact Form
-        Card(modifier = Modifier.fillMaxWidth()) {
+        SynapseCard(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text("Emergency Contact", style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(12.dp))
@@ -507,14 +509,13 @@ fun SettingsTab(
                     Text(
                         "⚠️ No phone number set — emergency SMS won't be sent until this is filled in.",
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color(0xFFB71C1C)
+                        color = com.example.synapse.ui.theme.HighRisk
                     )
                 }
             }
         }
 
-        // Audio Control Card
-        Card(modifier = Modifier.fillMaxWidth()) {
+        SynapseCard(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text("Calming Audio", style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(12.dp))
@@ -541,7 +542,7 @@ fun SettingsTab(
 
                 if (isMusicPlaying) {
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text("🎵 Now playing", color = Color(0xFF2E7D32), style = MaterialTheme.typography.bodySmall)
+                    Text("🎵 Now playing", color = com.example.synapse.ui.theme.CalmRisk, style = MaterialTheme.typography.bodySmall)
                 }
             }
         }

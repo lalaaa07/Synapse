@@ -15,10 +15,10 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
-import com.example.synapse.ui.theme.SageAccent
-import com.example.synapse.ui.theme.AmberRisk
-import com.example.synapse.ui.theme.CoralRisk
-import com.example.synapse.ui.theme.SurfaceElevatedDark
+import com.example.synapse.ui.theme.CalmRisk
+import com.example.synapse.ui.theme.ModerateRisk
+import com.example.synapse.ui.theme.HighRisk
+import com.example.synapse.ui.theme.TanSurfaceElevated
 import androidx.compose.material3.Text
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.layout.Column
@@ -39,9 +39,9 @@ fun RiskGauge(score: Int, modifier: Modifier = Modifier) {
     )
 
     val gaugeColor = when {
-        score >= 8 -> CoralRisk
-        score >= 5 -> AmberRisk
-        else -> SageAccent
+        score >= 8 -> HighRisk
+        score >= 5 -> ModerateRisk
+        else -> CalmRisk
     }
 
     Box(
@@ -61,7 +61,7 @@ fun RiskGauge(score: Int, modifier: Modifier = Modifier) {
 
             // Background track
             drawArc(
-                color = SurfaceElevatedDark,
+                color = TanSurfaceElevated,
                 startAngle = startAngle,
                 sweepAngle = sweepAngle,
                 useCenter = false,

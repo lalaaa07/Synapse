@@ -1,8 +1,6 @@
 package com.example.synapse.ui.theme
 
 import android.app.Activity
-import android.os.Build
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
@@ -12,15 +10,15 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
 private val SynapseColorScheme = darkColorScheme(
-    primary = SageAccent,
-    secondary = GoldAccent,
-    tertiary = AmberRisk,
-    error = CoralRisk,
-    background = BackgroundDark,
-    surface = SurfaceDark,
-    surfaceVariant = SurfaceElevatedDark,
-    outline = BorderDark,
-    onPrimary = BackgroundDark,
+    primary = RedAccent,
+    secondary = MaroonDark,
+    tertiary = ModerateRisk,
+    error = HighRisk,
+    background = CreamBackground,
+    surface = TanSurface,
+    surfaceVariant = TanSurfaceElevated,
+    outline = BorderWarm,
+    onPrimary = CreamBackground,
     onBackground = TextPrimary,
     onSurface = TextPrimary,
     onSurfaceVariant = TextSecondary
