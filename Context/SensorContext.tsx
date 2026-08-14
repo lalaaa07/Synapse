@@ -7,6 +7,7 @@ const SERVICE_UUID  = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
 const SENSOR_CHAR   = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
 const ALERT_CHAR    = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
 const MOTOR_CHAR    = "6e400004-b5a3-f393-e0a9-e50e24dcca9e";
+const SETTINGS_CHAR = "6e400006-b5a3-f393-e0a9-e50e24dcca9e";
 
 const bleManager = new BleManager();
 
@@ -54,6 +55,7 @@ interface SensorContextType {
   scanAndConnect: () => void;
   disconnect: () => void;
   sendMotorCommand: (cmd: string) => void;
+  sendSettings: (settings: Record<string, number>) => void;   // ← add this
   alertSettings: AlertSettings;
   setAlertSettings: (settings: AlertSettings) => void;
   alertHistory: AlertEvent[];
@@ -222,12 +224,25 @@ export function SensorProvider({ children }: { children: ReactNode }) {
     } catch (e) { console.error("Motor command error:", e); }
   }
 
+// ── Send settings update (thresholds) ──────────────────────────
+  async function sendSettings(settings: Record<string, number>) {
+    if (!deviceRef.current || !connected) return;
+    try {
+      const payload = JSON.stringify(settings);
+      const encoded = btoa(payload);
+      await deviceRef.current.writeCharacteristicWithResponseForService(
+        SERVICE_UUID, SETTINGS_CHAR, encoded
+      );
+      console.log("Settings sent:", payload);
+    }   catch (e) { console.error("Settings write error:", e); }
+  }
+
   return (
     <SensorContext.Provider value={{
       sensorData, setSensorData,
       connected, setConnected,
       scanning, scanAndConnect, disconnect,
-      sendMotorCommand,
+      sendMotorCommand,sendSettings,
       alertSettings, setAlertSettings,
       alertHistory, addAlert,
       playAlert, stopAlert, isPlaying,
