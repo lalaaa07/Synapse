@@ -1,6 +1,7 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from "react-native";
 import { useSensor } from "../Context/SensorContext";
+import { useState } from "react";
 
 const MOTOR_PATTERNS = [
   { cmd: "calm",      label: "Calm",      desc: "Slow breathing",     colors: ["#1e3a5f","#2563eb"] as [string,string] },
@@ -13,6 +14,13 @@ const MOTOR_PATTERNS = [
 
 export default function Alerts() {
   const { alertSettings, setAlertSettings, alertHistory, playAlert, stopAlert, isPlaying } = useSensor();
+  const [fallG, setFallG] = useState(2.2);
+
+  function updateFallG(newVal: number) {
+    const clamped = Math.round(Math.min(4.0, Math.max(1.5, newVal)) * 10) / 10;
+    setFallG(clamped);
+    sendSettings({ fall_g: clamped });
+  }
 
   function update(key: string, value: any) {
     setAlertSettings({ ...alertSettings, [key]: value });
@@ -77,6 +85,21 @@ export default function Alerts() {
               <Text style={styles.thresholdBtnText}>+</Text>
             </TouchableOpacity>
           </View>
+        </LinearGradient>
+
+        {/* Fall sensitivity */}
+        <LinearGradient colors={["#12002a", "#0d1b3e"]} style={styles.section}>
+          <Text style={styles.sectionTitle}>Fall Sensitivity</Text>
+          <View style={styles.thresholdRow}>
+            <TouchableOpacity style={styles.thresholdBtn} onPress={() => updateFallG(fallG - 0.2)}>
+              <Text style={styles.thresholdBtnText}>−</Text>
+            </TouchableOpacity>
+            <Text style={styles.thresholdValue}>{fallG.toFixed(1)}g</Text>
+            <TouchableOpacity style={styles.thresholdBtn} onPress={() => updateFallG(fallG + 0.2)}>
+              <Text style={styles.thresholdBtnText}>+</Text>
+            </TouchableOpacity>
+          </View>
+          <Text style={styles.rowSub}>Lower = more sensitive, higher = fewer false alarms</Text>
         </LinearGradient>
 
         {/* HR thresholds */}
