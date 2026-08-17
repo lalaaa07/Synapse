@@ -92,3 +92,28 @@ fun SettingsIcon(color: Color, modifier: Modifier = Modifier) {
         }
     }
 }
+
+@Composable
+fun ProfileIcon(color: Color, modifier: Modifier = Modifier) {
+    Canvas(modifier = modifier.size(22.dp)) {
+        val stroke = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round)
+        val cx = size.width / 2f
+        val cy = size.height / 2f
+        val w = size.width
+        val h = size.height
+
+        // Head circle outline
+        drawCircle(color = color, radius = 4.dp.toPx(), center = Offset(cx, h * 0.38f), style = stroke)
+
+        // Shoulder arc outline
+        drawArc(
+            color = color,
+            startAngle = 180f,
+            sweepAngle = 180f,
+            useCenter = false,
+            topLeft = Offset(cx - 7.dp.toPx(), h * 0.62f),
+            size = androidx.compose.ui.geometry.Size(14.dp.toPx(), 12.dp.toPx()),
+            style = stroke
+        )
+    }
+}
