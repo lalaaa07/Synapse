@@ -12,6 +12,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.builtins.MapSerializer
+import kotlinx.serialization.builtins.serializer
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -382,17 +384,20 @@ class BleManager(private val context: Context) {
     }
     
     fun sendSettings(settings: Map<String, Double>) {
-      val char = settingsCharacteristic
-      val gatt = bluetoothGatt
-      if (char == null || gatt == null) {
+        val char = settingsCharacteristic
+        val gatt = bluetoothGatt
+        if (char == null || gatt == null) {
             Log.w(TAG, "Cannot send settings — not connected")
             return
-    }
-      val jsonString = Json.encodeToString(settings)
-      char.value = jsonString.toByteArray(Charsets.UTF_8)
-      gatt.writeCharacteristic(char)
-      Log.d(TAG, "sendSettings($jsonString)")
-      logAction("Settings updated: $jsonString")
+        }
+        val jsonString = Json.encodeToString(
+            MapSerializer(String.serializer(), Double.serializer()),
+            settings
+        )
+        char.value = jsonString.toByteArray(Charsets.UTF_8)
+        gatt.writeCharacteristic(char)
+        Log.d(TAG, "sendSettings($jsonString)")
+        logAction("Settings updated: $jsonString")
     }
 
     fun sendFallThreshold(value: Double) {
