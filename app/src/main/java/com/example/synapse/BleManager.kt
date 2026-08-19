@@ -25,6 +25,7 @@ private const val HIGH_RISK_THRESHOLD = 6
 val SERVICE_UUID: UUID = UUID.fromString("6e400001-b5a3-f393-e0a9-e50e24dcca9e")
 val TELEMETRY_RX_UUID: UUID = UUID.fromString("6e400002-b5a3-f393-e0a9-e50e24dcca9e")
 val VIBRATION_WRITE_UUID: UUID = UUID.fromString("6e400004-b5a3-f393-e0a9-e50e24dcca9e")
+val SETTINGS_WRITE_UUID: UUID = UUID.fromString("6e400006-b5a3-f393-e0a9-e50e24dcca9e")
 val CCCD_UUID: UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
 
 sealed class BleConnectionState {
@@ -66,6 +67,7 @@ class BleManager(private val context: Context) {
 
     private var bluetoothGatt: BluetoothGatt? = null
     private var vibrationCharacteristic: BluetoothGattCharacteristic? = null
+    private var settingsCharacteristic: BluetoothGattCharacteristic? = null
 
     private val json = Json { ignoreUnknownKeys = true }
     private val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
@@ -191,6 +193,7 @@ class BleManager(private val context: Context) {
                     _connectionState.value = BleConnectionState.Disconnected
                     bluetoothGatt = null
                     vibrationCharacteristic = null
+                    settingsCharacteristic = null
                     stopVibrationSequence()
                     isCurrentlyHighRisk = false
                     highRiskAlertSent = false
@@ -224,6 +227,7 @@ class BleManager(private val context: Context) {
             }
 
             vibrationCharacteristic = service.getCharacteristic(VIBRATION_WRITE_UUID)
+            settingsCharacteristic = service.getCharacteristic(SETTINGS_WRITE_UUID)
 
             val telemetryChar = service.getCharacteristic(TELEMETRY_RX_UUID)
             if (telemetryChar == null) {
@@ -376,12 +380,31 @@ class BleManager(private val context: Context) {
         gatt.writeCharacteristic(char)
         Log.d(TAG, "sendVibrationCommand('$command')")
     }
+    
+    fun sendSettings(settings: Map<String, Double>) {
+      val char = settingsCharacteristic
+      val gatt = bluetoothGatt
+      if (char == null || gatt == null) {
+            Log.w(TAG, "Cannot send settings — not connected")
+            return
+    }
+      val jsonString = Json.encodeToString(settings)
+      char.value = jsonString.toByteArray(Charsets.UTF_8)
+      gatt.writeCharacteristic(char)
+      Log.d(TAG, "sendSettings($jsonString)")
+      logAction("Settings updated: $jsonString")
+    }
+
+    fun sendFallThreshold(value: Double) {
+        sendSettings(mapOf("fall_g" to value))
+    }
 
     fun disconnect() {
         bluetoothGatt?.disconnect()
         bluetoothGatt?.close()
         bluetoothGatt = null
         vibrationCharacteristic = null
+        settingsCharacteristic = null
         stopVibrationSequence()
         managerScope.cancel()
         isCurrentlyHighRisk = false

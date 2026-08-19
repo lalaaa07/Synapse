@@ -133,6 +133,7 @@ class MainActivity : ComponentActivity() {
                                 musicVolume       = musicVolume,
                                 onMusicVolumeChange = { musicVolume = it },
                                 isMusicPlaying    = musicManager.isPlaying()
+                                onFallThresholdChange = { value -> bleManager.sendFallThreshold(value) }
                             )
                         }
                     }
@@ -594,11 +595,13 @@ fun SettingsTab(
     musicVolume: Float,
     onMusicVolumeChange: (Float) -> Unit,
     isMusicPlaying: Boolean
+    onFallThresholdChange: (Double) -> Unit
 ) {
     var name      by remember { mutableStateOf(initialName) }
     var phone     by remember { mutableStateOf(initialPhone) }
     var message   by remember { mutableStateOf(initialMessage) }
     var justSaved by remember { mutableStateOf(false) }
+    var fallG     by remember { mutableStateOf(2.2) }
 
     val fieldColors = OutlinedTextFieldDefaults.colors(
         focusedBorderColor   = GemSapphire,
@@ -647,6 +650,53 @@ fun SettingsTab(
                     }
                 }
             }
+        }
+
+        // Fall Sensitivity
+        SynapseCard(modifier = Modifier.fillMaxWidth()) {
+          Column(modifier = Modifier.padding(20.dp)) {
+            Text("Fall Sensitivity", style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+            "Lower = more sensitive, higher = fewer false alarms.",
+            style = MaterialTheme.typography.bodySmall
+            )
+            Spacer(modifier = Modifier.height(14.dp))
+
+          Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+          ) {
+              OutlinedButton(
+                onClick = {
+                    fallG = (fallG - 0.2).coerceAtLeast(1.5)
+                    onFallThresholdChange(fallG)
+                },
+                shape  = RoundedCornerShape(10.dp),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = GemSapphire),
+                border = BorderStroke(1.dp, GemSapphire.copy(alpha = 0.40f))
+            ) { Text("−") }
+
+            Spacer(modifier = Modifier.width(20.dp))
+            Text(
+                "%.1fg".format(fallG),
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.width(20.dp))
+
+            OutlinedButton(
+                onClick = {
+                    fallG = (fallG + 0.2).coerceAtMost(4.0)
+                    onFallThresholdChange(fallG)
+                },
+                shape  = RoundedCornerShape(10.dp),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = GemSapphire),
+                border = BorderStroke(1.dp, GemSapphire.copy(alpha = 0.40f))
+              ) { Text("+") }
+            }
+          }
         }
 
         // Emergency Contact
