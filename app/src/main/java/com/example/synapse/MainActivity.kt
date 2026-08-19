@@ -8,6 +8,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -59,91 +61,149 @@ class MainActivity : ComponentActivity() {
         bleManager   = BleManager(applicationContext)
         musicManager = MusicManager(applicationContext)
 
+        val sharedPrefs = getSharedPreferences("synapse_session", MODE_PRIVATE)
+
         setContent {
+            // Load saved session details
+            val savedEmail = remember { sharedPrefs.getString("email", "") ?: "" }
+            val savedUsername = remember { sharedPrefs.getString("username", "") ?: "" }
+
+            var currentScreen by remember { mutableStateOf("splash") }
+            var loggedInEmail by remember { mutableStateOf(savedEmail) }
+            var loggedInUsername by remember { mutableStateOf(savedUsername) }
+
             SynapseTheme {
-                var permissionsGranted by remember { mutableStateOf(false) }
-
-                val permissionLauncher = rememberLauncherForActivityResult(
-                    contract = ActivityResultContracts.RequestMultiplePermissions()
-                ) { results ->
-                    permissionsGranted = results.values.all { it }
-                    if (permissionsGranted) bleManager.startScan()
-                }
-
-                LaunchedEffect(Unit) { permissionLauncher.launch(requiredPermissions) }
-
-                val connectionState    by bleManager.connectionState.collectAsState()
-                val telemetry          by bleManager.telemetry.collectAsState()
-                val riskScore          by bleManager.riskScore.collectAsState()
-                val deviceAddress      by bleManager.deviceAddress.collectAsState()
-                val actionLog          by bleManager.actionLog.collectAsState()
-                val shouldPlayCalmingMusic by bleManager.shouldPlayCalmingMusic.collectAsState()
-
-                var manualMusicEnabled by remember { mutableStateOf(true) }
-                var musicVolume        by remember { mutableStateOf(1.0f) }
-
-                LaunchedEffect(shouldPlayCalmingMusic, manualMusicEnabled) {
-                    if (shouldPlayCalmingMusic && manualMusicEnabled) musicManager.play()
-                    else musicManager.stop()
-                }
-                LaunchedEffect(musicVolume) { musicManager.setVolume(musicVolume) }
-
-                var selectedTab by remember { mutableStateOf(0) }
-
-                // ── Full-screen warm gradient background ─────────────────────
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(
-                            brush = Brush.linearGradient(
-                                colors = listOf(
-                                    WarmWhite,
-                                    Color(0xFFF4F1EC),
-                                    Color(0xFFEDE8E1)
-                                )
-                            )
-                        )
-                ) {
-                    // ── Tab content area ─────────────────────────────────────
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .statusBarsPadding()
-                            .padding(bottom = 88.dp)
-                    ) {
-                        when (selectedTab) {
-                            0 -> DeviceStatusTab(
-                                state         = connectionState,
-                                telemetry     = telemetry,
-                                deviceAddress = deviceAddress
-                            )
-                            1 -> EpisodeMonitorTab(
-                                telemetry  = telemetry,
-                                riskScore  = riskScore,
-                                actionLog  = actionLog
-                            )
-                            2 -> SettingsTab(
-                                onManualCommand   = { cmd -> bleManager.sendVibrationCommand(cmd) },
-                                initialName       = bleManager.getEmergencyContactName(),
-                                initialPhone      = bleManager.getEmergencyContactPhone(),
-                                initialMessage    = bleManager.getEmergencyContactMessage(),
-                                onSaveContact     = { n, p, m -> bleManager.saveEmergencyContact(n, p, m) },
-                                musicAutoEnabled  = manualMusicEnabled,
-                                onMusicAutoToggle = { manualMusicEnabled = it },
-                                musicVolume       = musicVolume,
-                                onMusicVolumeChange = { musicVolume = it },
-                                isMusicPlaying    = musicManager.isPlaying()
-                                onFallThresholdChange = { value -> bleManager.sendFallThreshold(value) }
+                Crossfade(
+                    targetState = currentScreen,
+                    animationSpec = tween(durationMillis = 800),
+                    label = "ScreenTransition"
+                ) { screen ->
+                    when (screen) {
+                        "splash" -> {
+                            SynapseSplash(
+                                onTransitionComplete = {
+                                    val isUserLoggedIn = sharedPrefs.getBoolean("is_logged_in", false)
+                                    currentScreen = if (isUserLoggedIn) "main" else "signup"
+                                }
                             )
                         }
-                    }
+                        "signup" -> {
+                            SignUpScreen(
+                                onSignUpSuccess = { email, username ->
+                                    // Save session persistently
+                                    sharedPrefs.edit().apply {
+                                        putString("email", email)
+                                        putString("username", username)
+                                        putBoolean("is_logged_in", true)
+                                        apply()
+                                    }
+                                    loggedInEmail = email
+                                    loggedInUsername = username
+                                    currentScreen = "main"
+                                }
+                            )
+                        }
+                        "main" -> {
+                            var permissionsGranted by remember { mutableStateOf(false) }
 
-                    // ── Bottom navigation ────────────────────────────────────
-                    Box(modifier = Modifier.align(Alignment.BottomCenter)) {
-                        SynapseNavBar(
-                            selectedTab  = selectedTab,
-                            onTabSelected = { selectedTab = it }
-                        )
+                            val permissionLauncher = rememberLauncherForActivityResult(
+                                contract = ActivityResultContracts.RequestMultiplePermissions()
+                            ) { results ->
+                                permissionsGranted = results.values.all { it }
+                                if (permissionsGranted) bleManager.startScan()
+                            }
+
+                            // Prompts permissions immediately after transition to main dashboard
+                            LaunchedEffect(Unit) { permissionLauncher.launch(requiredPermissions) }
+
+                            val connectionState    by bleManager.connectionState.collectAsState()
+                            val telemetry          by bleManager.telemetry.collectAsState()
+                            val riskScore          by bleManager.riskScore.collectAsState()
+                            val deviceAddress      by bleManager.deviceAddress.collectAsState()
+                            val actionLog          by bleManager.actionLog.collectAsState()
+                            val shouldPlayCalmingMusic by bleManager.shouldPlayCalmingMusic.collectAsState()
+
+                            var manualMusicEnabled by remember { mutableStateOf(true) }
+                            var musicVolume        by remember { mutableStateOf(1.0f) }
+
+                            LaunchedEffect(shouldPlayCalmingMusic, manualMusicEnabled) {
+                                if (shouldPlayCalmingMusic && manualMusicEnabled) musicManager.play()
+                                else musicManager.stop()
+                            }
+                            LaunchedEffect(musicVolume) { musicManager.setVolume(musicVolume) }
+
+                            var selectedTab by remember { mutableStateOf(0) }
+
+                            // ── Full-screen warm gradient background ─────────────────────
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(
+                                        brush = Brush.linearGradient(
+                                            colors = listOf(
+                                                WarmWhite,
+                                                Color(0xFFF4F1EC),
+                                                Color(0xFFEDE8E1)
+                                            )
+                                        )
+                                    )
+                            ) {
+                                // ── Tab content area ─────────────────────────────────────
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .statusBarsPadding()
+                                        .padding(bottom = 88.dp)
+                                ) {
+                                    when (selectedTab) {
+                                        0 -> DeviceStatusTab(
+                                            state         = connectionState,
+                                            telemetry     = telemetry,
+                                            deviceAddress = deviceAddress
+                                        )
+                                        1 -> EpisodeMonitorTab(
+                                            telemetry  = telemetry,
+                                            riskScore  = riskScore,
+                                            actionLog  = actionLog
+                                        )
+                                        2 -> SettingsTab(
+                                            onManualCommand   = { cmd -> bleManager.sendVibrationCommand(cmd) },
+                                            initialName       = bleManager.getEmergencyContactName(),
+                                            initialPhone      = bleManager.getEmergencyContactPhone(),
+                                            initialMessage    = bleManager.getEmergencyContactMessage(),
+                                            onSaveContact     = { n, p, m -> bleManager.saveEmergencyContact(n, p, m) },
+                                            musicAutoEnabled  = manualMusicEnabled,
+                                            onMusicAutoToggle = { manualMusicEnabled = it },
+                                            musicVolume       = musicVolume,
+                                            onMusicVolumeChange = { musicVolume = it },
+                                            isMusicPlaying    = musicManager.isPlaying(),
+                                            onFallThresholdChange = { value -> bleManager.sendFallThreshold(value) }
+                                        )
+                                        3 -> ProfileTab(
+                                            username        = loggedInUsername,
+                                            email           = loggedInEmail,
+                                            deviceConnected = connectionState is BleConnectionState.Connected,
+                                            onLogOut = {
+                                                // Clear session state
+                                                sharedPrefs.edit().apply {
+                                                    putBoolean("is_logged_in", false)
+                                                    apply()
+                                                }
+                                                currentScreen = "signup"
+                                            }
+                                        )
+                                    }
+                                }
+
+                                // ── Bottom navigation ────────────────────────────────────
+                                Box(modifier = Modifier.align(Alignment.BottomCenter)) {
+                                    SynapseNavBar(
+                                        selectedTab  = selectedTab,
+                                        onTabSelected = { selectedTab = it }
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -161,13 +221,13 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun SynapseNavBar(selectedTab: Int, onTabSelected: (Int) -> Unit) {
-    val labels = listOf("Device", "Monitor", "Settings")
+    val labels = listOf("Device", "Monitor", "Settings", "Profile")
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .navigationBarsPadding()
-            .padding(horizontal = 24.dp, vertical = 12.dp),
+            .padding(horizontal = 16.dp, vertical = 12.dp),
         contentAlignment = Alignment.Center
     ) {
         // Nav bar container — white card with shadow
@@ -203,7 +263,7 @@ fun SynapseNavBar(selectedTab: Int, onTabSelected: (Int) -> Unit) {
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication        = null
                             ) { onTabSelected(index) }
-                            .padding(horizontal = 22.dp, vertical = 10.dp),
+                            .padding(horizontal = 14.dp, vertical = 10.dp), // reduced horizontal spacing to fit 4 tabs
                         contentAlignment = Alignment.Center
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -212,6 +272,7 @@ fun SynapseNavBar(selectedTab: Int, onTabSelected: (Int) -> Unit) {
                                 0 -> SignalIcon(color = iconColor)
                                 1 -> PulseIcon(color = iconColor)
                                 2 -> SettingsIcon(color = iconColor)
+                                3 -> ProfileIcon(color = iconColor)
                             }
                             Spacer(modifier = Modifier.height(3.dp))
                             Text(
@@ -594,7 +655,7 @@ fun SettingsTab(
     onMusicAutoToggle: (Boolean) -> Unit,
     musicVolume: Float,
     onMusicVolumeChange: (Float) -> Unit,
-    isMusicPlaying: Boolean
+    isMusicPlaying: Boolean,
     onFallThresholdChange: (Double) -> Unit
 ) {
     var name      by remember { mutableStateOf(initialName) }
@@ -881,5 +942,135 @@ fun SettingsTab(
         }
 
         Spacer(modifier = Modifier.height(8.dp))
+    }
+}
+
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PAGE 4 — PROFILE TAB
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+fun ProfileTab(
+    username: String,
+    email: String,
+    deviceConnected: Boolean,
+    onLogOut: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 20.dp, vertical = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        GlassHeader("Profile")
+
+        // Profile Details Card
+        SynapseCard(modifier = Modifier.fillMaxWidth()) {
+            Column(
+                modifier = Modifier
+                    .padding(24.dp)
+                    .fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Initials Avatar with deep-violet gradient
+                Box(
+                    modifier = Modifier
+                        .size(80.dp)
+                        .clip(RoundedCornerShape(40.dp))
+                        .background(
+                            brush = Brush.linearGradient(
+                                colors = listOf(GemSapphire, Color(0xFF818CF8))
+                            )
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = if (username.isNotEmpty()) username.take(1).uppercase() else "U",
+                        color = Color.White,
+                        fontSize = 32.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = username.ifEmpty { "Synapse Wearer" },
+                    color = TextPrimary,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Text(
+                    text = email.ifEmpty { "user@synapse.com" },
+                    color = TextSecondary,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+        }
+
+        // Diagnostics Card
+        SynapseCard(modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.padding(20.dp)) {
+                Text("System Diagnostics", style = MaterialTheme.typography.titleMedium)
+                Spacer(modifier = Modifier.height(12.dp))
+                HorizontalDivider(color = DividerTint, thickness = 1.dp)
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("Device Connection", style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        text = if (deviceConnected) "Connected" else "Disconnected",
+                        color = if (deviceConnected) CalmRisk else TextHint,
+                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("Monitoring Status", style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        text = "Active",
+                        color = CalmRisk,
+                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Log Out Button
+        Button(
+            onClick = onLogOut,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp),
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = HighRisk,
+                contentColor = Color.White
+            )
+        ) {
+            Text(
+                text = "Log Out",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold
+            )
+        }
     }
 }
